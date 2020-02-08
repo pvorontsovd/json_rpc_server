@@ -1,0 +1,3 @@
+.vscode
+integration_tests/pgdata
+json_rpc_server
