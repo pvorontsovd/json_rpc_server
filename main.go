@@ -19,19 +19,9 @@ func main() {
 	flag.Parse()
 
 	db := db.New(*dbName, *dbHost, *dbUser, *dbPass, *dbPort)
+	addr := fmt.Sprintf("%s:%d", *apiHost, *apiPort)
 
-	if err := db.Open(); err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	if err := db.Init(); err != nil {
-		log.Fatal(err)
-	}
-
-	api := api.New(fmt.Sprintf("%s:%d", *apiHost, *apiPort), db)
-
-	if err := api.Listen(); err != nil {
+	if err := api.Listen(addr, db); err != nil {
 		log.Fatal(err)
 	}
 }

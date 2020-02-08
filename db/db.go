@@ -7,50 +7,29 @@ import (
 	_ "github.com/lib/pq" // pg driver
 )
 
+type DB interface {
+	Add(u *User) error
+	Get(login string) (*User, error)
+	Set(u *User) error
+}
+
 type Postgres struct {
 	conn *sql.DB
-
-	dbName   string
-	hostName string
-	port     int
-	user     string
-	pass     string
 }
 
-func New(dbName, hostName, user, pass string, port int) *Postgres {
-	return &Postgres{
-		dbName:   dbName,
-		hostName: hostName,
-		port:     port,
-		user:     user,
-		pass:     pass,
-	}
-}
-
-func (p *Postgres) Open() error {
+func New(dbName, dbHost, dbUser, dbPass string, dbPort int) DB {
 	conn, err := sql.Open("postgres", fmt.Sprintf(
 		"user=%s dbname=%s password=%s host=%s port=%d sslmode=disable",
-		p.user, p.dbName, p.pass, p.hostName, p.port,
+		dbUser, dbName, dbPass, dbHost, dbPort,
 	))
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if err := conn.Ping(); err != nil {
-		conn.Close()
-		return err
+		panic(err)
 	}
 
-	p.conn = conn
-
-	return nil
-}
-
-func (p *Postgres) Close() {
-	p.conn.Close()
-}
-
-func (p *Postgres) Init() error {
 	createUser := `
 		CREATE TABLE IF NOT EXISTS users
 		(
@@ -60,15 +39,17 @@ func (p *Postgres) Init() error {
 		);
 `
 
-	rows, err := p.conn.Query(createUser)
+	rows, err := conn.Query(createUser)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	defer rows.Close()
 
 	if rows.Err() != nil {
-		return rows.Err()
+		panic(rows.Err())
 	}
 
-	return nil
+	return &Postgres{
+		conn: conn,
+	}
 }

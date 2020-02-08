@@ -13,7 +13,7 @@ import (
 )
 
 type Users struct {
-	db *db.Postgres
+	db db.DB
 }
 
 type UserArgs struct {
@@ -83,24 +83,12 @@ type contextKey string
 
 var RemoteAddrContextKey contextKey = "RemoteAddr"
 
-type API struct {
-	addr string
-	db   *db.Postgres
-}
-
-func New(addr string, db *db.Postgres) *API {
-	return &API{
-		addr: addr,
-		db:   db,
-	}
-}
-
-func (a *API) Listen() error {
-	if err := rpc.Register(&Users{db: a.db}); err != nil {
+func Listen(addr string, db db.DB) error {
+	if err := rpc.Register(&Users{db: db}); err != nil {
 		return err
 	}
 
-	l, err := net.Listen("tcp", "127.0.0.1:8080")
+	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
